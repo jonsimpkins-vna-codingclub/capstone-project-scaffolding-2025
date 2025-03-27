@@ -1,0 +1,36 @@
+body {
+    margin: 0; /* Remove default body margin */
+    overflow: hidden; /* Hide scrollbars that might appear from the canvas */
+    background-color: #f0f8ff; /* Light blue background */
+    display: flex; /* Optional: Helps center canvas if needed, though Matter usually fills body */
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+canvas {
+    display: block; /* Ensure canvas behaves like a block element */
+    /* Matter.js renderer will create and manage the canvas size */
+}
+
+/* Style for the drop button */
+#dropButton {
+    position: fixed; /* Position relative to the viewport */
+    top: 20px;
+    left: 20px;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    z-index: 10; /* Ensure it's above the canvas */
+    background-color: #4CAF50; /* Green */
+    border: none;
+    color: white;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    border-radius: 5px;
+}
+
+#dropButton:hover {
+    background-color: #45a049;
+}

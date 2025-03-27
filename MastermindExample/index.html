@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastermind p5.js</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.min.js"></script>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        main {
+            /* p5.js canvas will be centered by the body styles */
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        /* Optional: Add styles for p5 canvas if needed */
+        canvas {
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Mastermind</h1>
+        <main>
+            </main>
+     </div>
+
+    <script>
+        // --- Game Configuration ---
+        const NUM_PEGS = 4;
+        const MAX_TURNS = 10;
+        const PEG_DIAMETER = 30;
+        const SPACING = 15;
+        const FEEDBACK_DIAMETER = 10;
+        const PALETTE_Y_OFFSET = 50;
+        const BUTTON_HEIGHT = 40;
+        const BUTTON_WIDTH = 100;
+
+        // --- Colors ---
+        // Using p5 color objects allows for easy manipulation later if needed
+        let availableColors = [];
+        const COLOR_VALUES = [
+            '#FF0000', // Red
+            '#00FF00', // Lime Green
+            '#0000FF', // Blue
+            '#FFFF00', // Yellow
+            '#FF00FF', // Magenta
+            '#00FFFF', // Cyan
+            '#FFA500', // Orange
+            '#800080'  // Purple
+        ];
+
+        // --- Game State Variables ---
+        let secretCode = [];
+        let guesses = []; // Stores arrays of placed peg colors (indices) for each turn
+        let feedback = []; // Stores feedback objects {black: #, white: #} for each turn
+        let currentGuess = []; // Array of color indices for the current turn
+        let currentTurn = 0;
+        let gameState = 'playing'; // 'playing', 'won', 'lost'
+
+        // --- UI Element Positions ---
+        let palettePositions = [];
+        let submitButtonPos = {};
+        let newGameButtonPos = {};
+
+        // --- p5.js Setup Function ---
+        function setup() {
+            let canvasHeight = SPACING + (MAX_TURNS * (PEG_DIAMETER + SPACING)) + // Guess rows
+                               SPACING + PEG_DIAMETER + SPACING + // Current guess row
+                               PALETTE_Y_OFFSET + PEG_DIAMETER + SPACING + // Palette
+                               BUTTON_HEIGHT + SPACING * 2; // Button area
+            let canvasWidth = SPACING + (NUM_PEGS * (PEG_DIAMETER + SPACING)) + // Guess pegs
+                              SPACING + (2 * (FEEDBACK_DIAMETER + SPACING / 2)) + // Feedback area (approx)
+                              SPACING;
+
+            // Ensure minimum width for palette/buttons
+            let paletteWidth = availableColors.length * (PEG_DIAMETER + SPACING) + SPACING;
+            let buttonAreaWidth = BUTTON_WIDTH * 2 + SPACING * 3;
+            canvasWidth = max(canvasWidth, paletteWidth, buttonAreaWidth);
+
+            createCanvas(canvasWidth, canvasHeight);
+            colorMode(RGB); // Use RGB color mode
+
+            // Convert hex colors to p5 color objects
+            availableColors = COLOR_VALUES.map(c => color(c));
+
+            calculateLayouts(width, height);
+            resetGame();
+        }
+
+        function calculateLayouts(w, h) {
+            // Calculate palette positions
+            palettePositions = [];
+            let totalPaletteWidth = availableColors.length * (PEG_DIAMETER + SPACING) - SPACING;
+            let paletteStartX = (w - totalPaletteWidth) / 2;
+            let paletteY = h - SPACING - BUTTON_HEIGHT - SPACING - PEG_DIAMETER - SPACING;
+             for (let i = 0; i < availableColors.length; i++) {
+                palettePositions.push({
+                    x: paletteStartX + i * (PEG_DIAMETER + SPACING) + PEG_DIAMETER / 2,
+                    y: paletteY + PEG_DIAMETER / 2,
+                    colorIndex: i
+                });
+            }
+
+            // Calculate button positions
+            let buttonY = h - SPACING - BUTTON_HEIGHT / 2;
+            submitButtonPos = {
+                x: w / 2 - BUTTON_WIDTH / 2 - SPACING,
+                y: buttonY - BUTTON_HEIGHT / 2, // Store top-left corner for rect
+                w: BUTTON_WIDTH,
+                h: BUTTON_HEIGHT,
+                label: "Check"
+            };
+             newGameButtonPos = {
+                x: w / 2 + SPACING,
+                y: buttonY - BUTTON_HEIGHT / 2, // Store top-left corner for rect
+                w: BUTTON_WIDTH,
+                h: BUTTON_HEIGHT,
+                label: "New Game"
+            };
+        }
+
+        // --- Game Logic Functions ---
+        function resetGame() {
+            secretCode = [];
+            for (let i = 0; i < NUM_PEGS; i++) {
+                secretCode.push(floor(random(availableColors.length)));
+            }
+            console.log("Secret Code (for debugging):", secretCode.map(index => COLOR_VALUES[index])); // For debugging
+
+            guesses = [];
+            feedback = [];
+            currentGuess = [];
+            currentTurn = 0;
+            gameState = 'playing';
+        }
+
+        function checkGuess() {
+            if (currentGuess.length !== NUM_PEGS) return; // Should not happen with UI checks, but good safeguard
+
+            let blackPegs = 0;
+            let whitePegs = 0;
+
+            let secretCopy = [...secretCode];
+            let guessCopy = [...currentGuess];
+            let secretMatched = Array(NUM_PEGS).fill(false);
+            let guessMatched = Array(NUM_PEGS).fill(false);
+
+            // First pass: Check for black pegs (correct color and position)
+            for (let i = 0; i < NUM_PEGS; i++) {
+                if (guessCopy[i] === secretCopy[i]) {
+                    blackPegs++;
+                    secretMatched[i] = true;
+                    guessMatched[i] = true;
+                }
+            }
+
+            // Second pass: Check for white pegs (correct color, wrong position)
+            for (let i = 0; i < NUM_PEGS; i++) {
+                if (!guessMatched[i]) { // Only check guess pegs not already matched (black)
+                    for (let j = 0; j < NUM_PEGS; j++) {
+                        // Only check secret pegs not already matched (black or previously white)
+                        // And check if the colors match
+                        if (!secretMatched[j] && guessCopy[i] === secretCopy[j]) {
+                            whitePegs++;
+                            secretMatched[j] = true; // Mark secret peg as used for white match
+                            guessMatched[i] = true;  // Mark guess peg as matched
+                            break; // Move to the next guess peg
+                        }
+                    }
+                }
+            }
+
+            // Store results
+            guesses.push([...currentGuess]);
+            feedback.push({ black: blackPegs, white: whitePegs });
+
+            // Update game state
+            if (blackPegs === NUM_PEGS) {
+                gameState = 'won';
+            } else if (currentTurn + 1 >= MAX_TURNS) {
+                gameState = 'lost';
+            } else {
+                 currentTurn++;
+                 currentGuess = []; // Clear for next turn
+            }
+             // Ensure currentGuess is cleared even if game ends on this turn
+             if (gameState !== 'playing') {
+                currentGuess = [];
+            }
+        }
+
+        // --- p5.js Drawing Functions ---
+        function draw() {
+            background(240);
+
+            drawBoard();
+            drawPalette();
+            drawButtons();
+            drawGameStatus();
+        }
+
+        function drawBoard() {
+            let startX = SPACING + PEG_DIAMETER / 2;
+            let startY = SPACING + PEG_DIAMETER / 2;
+            let feedbackStartX = startX + NUM_PEGS * (PEG_DIAMETER + SPACING) + SPACING;
+
+            // Draw past guesses and feedback
+            for (let t = 0; t < guesses.length; t++) {
+                let rowY = startY + t * (PEG_DIAMETER + SPACING);
+                // Draw guess pegs
+                for (let i = 0; i < NUM_PEGS; i++) {
+                    let pegX = startX + i * (PEG_DIAMETER + SPACING);
+                    let colorIndex = guesses[t][i];
+                    drawPeg(pegX, rowY, availableColors[colorIndex]);
+                }
+                // Draw feedback pegs
+                drawFeedback(feedbackStartX, rowY, feedback[t]);
+            }
+
+            // Draw current guess row (placeholders or placed pegs)
+            if (gameState === 'playing') {
+                let currentRowY = startY + currentTurn * (PEG_DIAMETER + SPACING);
+                for (let i = 0; i < NUM_PEGS; i++) {
+                    let pegX = startX + i * (PEG_DIAMETER + SPACING);
+                    if (i < currentGuess.length) {
+                        // Draw placed peg
+                        let colorIndex = currentGuess[i];
+                        drawPeg(pegX, currentRowY, availableColors[colorIndex]);
+                    } else {
+                        // Draw placeholder
+                        drawPeg(pegX, currentRowY, color(200), true); // Grey placeholder
+                    }
+                }
+            }
+
+             // Draw secret code area (reveal if game over)
+            let secretRowY = startY + MAX_TURNS * (PEG_DIAMETER + SPACING) + SPACING + PEG_DIAMETER/2;
+             if (gameState === 'won' || gameState === 'lost') {
+                 for (let i = 0; i < NUM_PEGS; i++) {
+                     let pegX = startX + i * (PEG_DIAMETER + SPACING);
+                     drawPeg(pegX, secretRowY, availableColors[secretCode[i]]);
+                 }
+             } else {
+                 for (let i = 0; i < NUM_PEGS; i++) {
+                     let pegX = startX + i * (PEG_DIAMETER + SPACING);
+                     fill(100);
+                     noStroke();
+                     textAlign(CENTER, CENTER);
+                     textSize(PEG_DIAMETER * 0.8);
+                     text('?', pegX, secretRowY);
+                 }
+             }
+            // Label for secret code area
+            fill(0);
+            noStroke();
+            textAlign(LEFT, CENTER);
+            textSize(14);
+            text("Secret:", SPACING, secretRowY - PEG_DIAMETER - SPACING);
+            text("Code:", SPACING, secretRowY - PEG_DIAMETER - SPACING + 16);
+
+             // Label for current guess area
+             if (gameState === 'playing') {
+                 let currentRowLabelY = startY + currentTurn * (PEG_DIAMETER + SPACING);
+                  fill(0);
+                 noStroke();
+                 textAlign(RIGHT, CENTER);
+                 textSize(14);
+                 text(`Guess ${currentTurn + 1}:`, startX - SPACING, currentRowLabelY);
+             }
+
+        }
+
+        function drawPeg(x, y, pegColor, isPlaceholder = false) {
+            push(); // Isolate styles
+            translate(x, y);
+            if (isPlaceholder) {
+                fill(pegColor); // Grey
+                stroke(150);
+                strokeWeight(1);
+            } else {
+                fill(pegColor);
+                stroke(50); // Darker border
+                strokeWeight(2);
+            }
+            ellipse(0, 0, PEG_DIAMETER, PEG_DIAMETER);
+            pop(); // Restore styles
+        }
+
+        function drawFeedback(startX, y, fb) {
+             if (!fb) return; // No feedback yet for this row
+
+            const gridCols = 2; // Arrange feedback in 2x2 grid
+            const fbSpacing = FEEDBACK_DIAMETER / 2;
+            let count = 0;
+
+            push();
+            translate(startX, y - (FEEDBACK_DIAMETER + fbSpacing)/2); // Center feedback block vertically
+
+             // Draw black pegs
+            fill(0); // Black
+            noStroke();
+            for (let i = 0; i < fb.black; i++) {
+                 let gridX = (count % gridCols) * (FEEDBACK_DIAMETER + fbSpacing);
+                 let gridY = floor(count / gridCols) * (FEEDBACK_DIAMETER + fbSpacing);
+                ellipse(gridX + FEEDBACK_DIAMETER/2, gridY + FEEDBACK_DIAMETER/2, FEEDBACK_DIAMETER, FEEDBACK_DIAMETER);
+                 count++;
+             }
+
+            // Draw white pegs
+             fill(255); // White
+             stroke(0);
+             strokeWeight(1);
+            for (let i = 0; i < fb.white; i++) {
+                 let gridX = (count % gridCols) * (FEEDBACK_DIAMETER + fbSpacing);
+                 let gridY = floor(count / gridCols) * (FEEDBACK_DIAMETER + fbSpacing);
+                 ellipse(gridX + FEEDBACK_DIAMETER/2, gridY + FEEDBACK_DIAMETER/2, FEEDBACK_DIAMETER, FEEDBACK_DIAMETER);
+                 count++;
+             }
+             pop();
+         }
+
+        function drawPalette() {
+            push();
+             textAlign(CENTER, BOTTOM);
+             textSize(14);
+             fill(0);
+             noStroke();
+             let paletteCenterY = palettePositions[0]?.y || height - 100; // Approximate position for text
+            text("Select Colors:", width / 2, paletteCenterY - PEG_DIAMETER / 2 - SPACING/2);
+
+            for (let i = 0; i < palettePositions.length; i++) {
+                let pos = palettePositions[i];
+                drawPeg(pos.x, pos.y, availableColors[pos.colorIndex]);
+
+                // Add slight highlight on hover
+                let d = dist(mouseX, mouseY, pos.x, pos.y);
+                if (d < PEG_DIAMETER / 2) {
+                    noFill();
+                    stroke(0, 150);
+                    strokeWeight(3);
+                    ellipse(pos.x, pos.y, PEG_DIAMETER + 5, PEG_DIAMETER + 5);
+                }
+            }
+            pop();
+        }
+
+        function drawButtons() {
+            // --- Submit/Check Button ---
+            let btn = submitButtonPos;
+            let isHoverSubmit = mouseX > btn.x && mouseX < btn.x + btn.w && mouseY > btn.y && mouseY < btn.y + btn.h;
+            let isActiveSubmit = gameState === 'playing' && currentGuess.length === NUM_PEGS;
+
+            push();
+            if (isActiveSubmit) {
+                 fill(isHoverSubmit ? '#4CAF50' : '#8BC34A'); // Greenish, darker on hover
+                 stroke(50);
+                 strokeWeight(1);
+             } else {
+                 fill(180); // Greyed out
+                 stroke(100);
+                 strokeWeight(1);
+             }
+             rect(btn.x, btn.y, btn.w, btn.h, 5); // Rounded corners
+
+            fill(isActiveSubmit ? 255 : 100); // White text when active, dark grey when inactive
+             noStroke();
+             textAlign(CENTER, CENTER);
+             textSize(16);
+             text(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
+             pop();
+
+            // --- New Game Button ---
+             btn = newGameButtonPos;
+            let isHoverNew = mouseX > btn.x && mouseX < btn.x + btn.w && mouseY > btn.y && mouseY < btn.y + btn.h;
+
+            push();
+             fill(isHoverNew ? '#03A9F4' : '#2196F3'); // Blue, darker on hover
+             stroke(50);
+             strokeWeight(1);
+             rect(btn.x, btn.y, btn.w, btn.h, 5); // Rounded corners
+
+            fill(255); // White text
+             noStroke();
+             textAlign(CENTER, CENTER);
+             textSize(16);
+             text(btn.label, btn.x + btn.w / 2, btn.y + btn.h / 2);
+             pop();
+        }
+
+        function drawGameStatus() {
+            let message = "";
+            let messageColor = color(0); // Black default
+
+             if (gameState === 'won') {
+                 message = `You won in ${currentTurn + 1} turns!`; // +1 because turn increments after check
+                 messageColor = color(0, 150, 0); // Dark Green
+             } else if (gameState === 'lost') {
+                 message = `You lost! The code was:`; // Code revealed separately
+                 messageColor = color(200, 0, 0); // Dark Red
+             } else {
+                 // Potentially add instructions or turn number while playing
+                 // message = `Turn: ${currentTurn + 1} / ${MAX_TURNS}`;
+                 return; // Don't draw playing status over the board elements
+            }
+
+            // Draw status message near the bottom, above palette/buttons
+            push();
+            fill(messageColor);
+            noStroke();
+            textAlign(CENTER, CENTER);
+            textSize(18);
+             // Position slightly above the palette
+            let statusY = palettePositions[0]?.y - PEG_DIAMETER - SPACING * 2 || height - 150;
+            text(message, width / 2, statusY);
+            pop();
+        }
+
+        // --- p5.js Event Handlers ---
+        function mousePressed() {
+            // Prevent interaction if game is over, except for New Game button
+             if (gameState !== 'playing') {
+                 // Check New Game button click
+                let btn = newGameButtonPos;
+                 if (mouseX > btn.x && mouseX < btn.x + btn.w && mouseY > btn.y && mouseY < btn.y + btn.h) {
+                     resetGame();
+                 }
+                 return; // Ignore other clicks when game is over
+             }
+
+            // 1. Check Palette Clicks
+            for (let i = 0; i < palettePositions.length; i++) {
+                let pos = palettePositions[i];
+                let d = dist(mouseX, mouseY, pos.x, pos.y);
+                if (d < PEG_DIAMETER / 2) {
+                    if (currentGuess.length < NUM_PEGS) {
+                        currentGuess.push(pos.colorIndex);
+                        return; // Exit after handling click
+                    }
+                }
+            }
+
+            // 2. Check Submit Button Click
+            let btnSubmit = submitButtonPos;
+            if (currentGuess.length === NUM_PEGS &&
+                mouseX > btnSubmit.x && mouseX < btnSubmit.x + btnSubmit.w &&
+                mouseY > btnSubmit.y && mouseY < btnSubmit.y + btnSubmit.h)
+            {
+                checkGuess();
+                return; // Exit after handling click
+            }
+
+             // 3. Check New Game button click (also active during play)
+             let btnNew = newGameButtonPos;
+             if (mouseX > btnNew.x && mouseX < btnNew.x + btnNew.w && mouseY > btnNew.y && mouseY < btnNew.y + btnNew.h) {
+                 resetGame();
+                 return; // Exit after handling click
+             }
+
+             // Optional: Allow clicking on current guess pegs to remove them (LIFO)?
+             // let startX = SPACING + PEG_DIAMETER / 2;
+             // let currentRowY = SPACING + PEG_DIAMETER / 2 + currentTurn * (PEG_DIAMETER + SPACING);
+             // for (let i = currentGuess.length - 1; i >= 0; i--) { // Check from right to left
+             //    let pegX = startX + i * (PEG_DIAMETER + SPACING);
+             //    let d = dist(mouseX, mouseY, pegX, currentRowY);
+             //    if (d < PEG_DIAMETER / 2) {
+             //        // Simple removal: remove the last added peg
+             //        if (i === currentGuess.length -1) {
+             //           currentGuess.pop();
+             //            return;
+             //        }
+             //         // More complex: remove specific peg (harder to manage array)
+             //    }
+             // }
+        }
+
+         // Optional: Handle window resizing
+        function windowResized() {
+             // Recalculate canvas size and element positions if needed
+             // This basic example might need more robust resizing logic
+             // For simplicity, we'll just recenter based on new layout calcs
+             calculateLayouts(width, height);
+             // Note: resizeCanvas() might be needed if the container size changes significantly
+        }
+
+    </script>
+</body>
+</html>

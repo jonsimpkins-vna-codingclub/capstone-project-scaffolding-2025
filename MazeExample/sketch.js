@@ -14,11 +14,19 @@ let maze = [
 
 let mazeWidth = maze[0].length;
 let mazeHeight = maze.length;
+
+// Remove all outer walls
+for (let i = 0; i < mazeWidth; i++) {
+  maze[0][i] = 0;
+  maze[mazeHeight - 1][i] = 0;
+}
+
 let cellSize = 50; // Size of each maze cell in 3D space
 let wallHeight = 50; // How tall the walls are
 
 // Player variables
 let playerX, playerZ; // Position (using maze grid coordinates initially)
+let startPlayerX, startPlayerZ; // Starting position, for if they wander off the map
 let playerY;         // Eye height
 let playerAngle = 0; // Direction player is facing (in radians)
 let moveSpeed = 1.5; // How fast the player moves
@@ -44,6 +52,8 @@ function setup() {
         // Position player in the center of the starting cell
         playerX = c * cellSize + cellSize / 2;
         playerZ = r * cellSize + cellSize / 2;
+        startPlayerX = playerX;
+        startPlayerZ = playerZ;
         startFound = true;
         break;
       }
@@ -139,6 +149,9 @@ function isPositionValid(x, z) {
 
   // Check boundaries
   if (gridX < 0 || gridX >= mazeWidth || gridZ < 0 || gridZ >= mazeHeight) {
+    // Reset player position
+    playerX = startPlayerX;
+    playerZ = startPlayerZ;
     return false; // Out of bounds
   }
 

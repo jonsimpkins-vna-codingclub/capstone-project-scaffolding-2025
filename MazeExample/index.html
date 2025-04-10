@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>p5.js 3D Maze Prototype</title>
+    <title>Geoffrey</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.2/p5.js"></script>
     <script src="sketch.js"></script>
     <style>
@@ -12,8 +12,8 @@
         /* Simple overlay for instructions */
         #instructions {
             position: absolute;
-            top: 10px;
-            left: 10px;
+            bottom: 10px;
+            right: 10px;
             color: white;
             font-family: sans-serif;
             font-size: 14px;
@@ -21,13 +21,17 @@
             padding: 5px 10px;
             border-radius: 5px;
         }
+
+        .classy {
+            display: block;
+        }
     </style>
 </head>
 <body>
     <div id="instructions">
-        Use Arrow Keys or WASD to move.<br>
-        UP/W: Forward | DOWN/S: Backward<br>
-        LEFT/A: Turn Left | RIGHT/D: Turn Right
+        <span class="classy">Use Arrow Keys or WASD to move.</span>
+        <span class="classy">UP/W: Forward | DOWN/S: Backward</span>
+        <span class="classy">LEFT/A: Turn Left | RIGHT/D: Turn Right</span>
     </div>
     <main>
     </main>

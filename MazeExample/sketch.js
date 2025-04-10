@@ -1,16 +1,5 @@
 // Maze representation (1 = wall, 0 = path)
-let maze = [
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-  [1, 0, 0, 0, 1, 0, 0, 0, 0, 1],
-  [1, 0, 1, 0, 1, 0, 1, 1, 0, 1],
-  [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-  [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
-  [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-  [1, 1, 1, 0, 0, 1, 1, 1, 0, 1],
-  [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-  [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
-  [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-];
+let maze = generateMaze(50);
 
 let mazeWidth = maze[0].length;
 let mazeHeight = maze.length;
@@ -205,3 +194,46 @@ function windowResized() {
   // Note: perspective() will automatically use the new width/height in the next draw() call
 }
 
+
+
+
+
+
+
+function randomBinary() {
+
+  // Generate a number 1-4
+
+  // if less than 4, then 0 (floor), else 1 (wall)
+
+  let randomInt = Math.ceil(Math.random() * 4);
+
+  if (randomInt == 4) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function generateRow(mazeSize) {
+  let row = [];
+
+  for (let i = 0; i < mazeSize; i++) {
+    row.push(randomBinary());
+  }
+
+  return row;
+}
+
+
+function generateMaze(mazeSize) {
+
+  let initialMaze = [];
+
+  for (let i = 0; i < mazeSize; i++) {
+    initialMaze.push(generateRow(mazeSize));
+  
+  }
+
+  return initialMaze;
+}

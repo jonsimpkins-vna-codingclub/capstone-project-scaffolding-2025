@@ -39,7 +39,7 @@ function loadMinotaur() {
   // The fourth argument is a failure callback (optional).
   try {
     console.log("Attempting to load model...");
-    minotaurModel = loadModel('Minotaur.obj',
+    minotaurModel = loadModel('https://raw.githubusercontent.com/jonsimpkins-vna-codingclub/capstone-project-scaffolding-2025/refs/heads/main/MazeExample/model/Minotaur.obj',
       true /* normalizeModel */,
       () => { console.log("Model loaded successfully!"); },
       (error) => { console.error("Error loading model:", error); }

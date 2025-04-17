@@ -1,7 +1,8 @@
 # 3ds Max Wavefront OBJ Exporter v0.97b - (c)2007 guruware
 # File Created: 25.04.2016 14:25:38
 
-mtllib ?? ???????.mtl
+# Omit material library
+# mtllib ?? ???????.mtl
 
 #
 # object Eyes_mesh

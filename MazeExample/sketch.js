@@ -29,7 +29,35 @@ let farClip = 2000;    // Far clipping plane distance (default is often 10 * cam
 // Note: The actual defaults depend on camera setup, but these are explicit overrides.
 // --- END NEW ---
 
+
+// Global variable to hold the loaded 3D model
+let minotaurModel;
+
+function loadMinotaur() {
+  // The second argument 'true' attempts to normalize the model's size and center it.
+  // The third argument is a success callback (optional).
+  // The fourth argument is a failure callback (optional).
+  try {
+    console.log("Attempting to load model...");
+    minotaurModel = loadModel('Minotaur.obj',
+      true /* normalizeModel */,
+      () => { console.log("Model loaded successfully!"); },
+      (error) => { console.error("Error loading model:", error); }
+    );
+  } catch (error) {
+    console.error("Exception during loadModel call:", error);
+    // Display a message on screen if loading fails fundamentally
+    alert("Failed to initiate model loading. Check file path and server setup.");
+  }
+}
+
+
+
+
 function setup() {
+  
+  loadMinotaur();
+
   createCanvas(windowWidth, windowHeight, WEBGL); // Use WEBGL mode for 3D
   angleMode(RADIANS); // Use radians for angles
 

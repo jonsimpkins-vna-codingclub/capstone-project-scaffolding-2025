@@ -1,0 +1,1 @@
+Minotaur model: https://www.cgtrader.com/free-3d-models/character/fantasy-character/minotaur-cda47223-1a94-4f7d-bc2b-82344547726d

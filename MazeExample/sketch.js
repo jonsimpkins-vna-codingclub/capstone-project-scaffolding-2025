@@ -120,6 +120,9 @@ function draw() {
 
   // Draw the floor
   drawFloor();
+
+  // Draw the Minotaur
+  drawMinotaur();
 }
 
 function handleInput() {
@@ -212,6 +215,31 @@ function drawFloor() {
   fill(50, 50, 50); // Dark grey for the floor
   noStroke();
   plane(floorWidth, floorDepth); // Draw a large plane for the floor
+  pop();
+}
+
+function drawMinotaur() {
+  if (!minotaurModel) {
+    // Still loading model...
+    return;
+  }
+
+  push();
+
+  // Apply transformations (these happen in reverse order: scale -> rotate -> translate)
+
+  rotateX(PI); // Rotate to stand upright
+  rotateY(frameCount * 0.01); // Spin around, just for demo purposes
+
+  // Scale the model to an appropriate size
+  scale(0.25);
+
+  // Use normalMaterial() to debug geometry based on surface normals
+  normalMaterial();
+
+  // Draw the loaded model
+  model(minotaurModel);
+
   pop();
 }
 

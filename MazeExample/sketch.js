@@ -1,5 +1,5 @@
 // Maze representation (1 = wall, 0 = path)
-let maze = generateMaze(50);
+let maze = generateMaze(10);
 
 let mazeWidth = maze[0].length;
 let mazeHeight = maze.length;
@@ -21,6 +21,13 @@ let playerAngle = 0; // Direction player is facing (in radians)
 let moveSpeed = 1.5; // How fast the player moves
 let turnSpeed = 0.05; // How fast the player turns
 let collisionPadding = 5; // Small buffer to prevent getting stuck in walls
+
+// Minotaur variables
+let minotaurX = 5 * cellSize;
+let minotaurZ = 5 * cellSize;
+
+// End state
+let gameOver = false;
 
 // --- NEW: Camera perspective settings ---
 let fov = Math.PI / 3; // Field of View (60 degrees)
@@ -97,6 +104,12 @@ function draw() {
 
   handleInput(); // Check for player movement/turning
 
+  let safeDistance = 20;
+  if (Math.abs(playerX - minotaurX) < safeDistance
+    && Math.abs(playerZ - minotaurZ) < safeDistance) {
+    gameOver = true;
+  }
+
   // --- NEW: Set perspective ---
   // Needs to be called each frame before camera() if you want it to apply correctly,
   // especially if the aspect ratio might change (e.g., window resize).
@@ -115,14 +128,18 @@ function draw() {
          0, 1, 0);                    // Up vector (positive Y means "up" in the world view)
 
 
-  // Draw the maze
-  drawMaze();
+  if (gameOver) {
+    background(255, 0, 0);
+  } else {
+    // Draw the maze
+    drawMaze();
 
-  // Draw the floor
-  drawFloor();
+    // Draw the floor
+    drawFloor();
 
-  // Draw the Minotaur
-  drawMinotaur();
+    // Draw the Minotaur
+    drawMinotaur();
+  }
 }
 
 function handleInput() {
@@ -228,8 +245,14 @@ function drawMinotaur() {
 
   // Apply transformations (these happen in reverse order: scale -> rotate -> translate)
 
-  rotateX(PI); // Rotate to stand upright
-  rotateY(frameCount * 0.01); // Spin around, just for demo purposes
+  
+
+  //rotateX(PI); // Rotate to stand upright
+  
+
+  translate(minotaurX, 0, minotaurZ);
+  
+  // rotateY(frameCount * 0.01); // Spin around, just for demo purposes
 
   // Scale the model to an appropriate size
   scale(0.25);
@@ -265,7 +288,7 @@ function randomBinary() {
   let randomInt = Math.ceil(Math.random() * 4);
 
   if (randomInt == 4) {
-    return 1;
+    //return 1;
   }
 
   return 0;

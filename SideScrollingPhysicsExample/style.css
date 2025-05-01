@@ -17,7 +17,7 @@ canvas {
 #dropButton {
     position: fixed; /* Position relative to the viewport */
     top: 20px;
-    left: 20px;
+    right: 20px;
     padding: 10px 15px;
     font-size: 16px;
     cursor: pointer;

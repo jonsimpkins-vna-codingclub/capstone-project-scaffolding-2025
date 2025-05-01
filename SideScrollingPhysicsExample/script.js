@@ -1,3 +1,6 @@
+
+
+
 // Ensure the DOM is fully loaded before running the script
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -26,6 +29,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     Render.run(render);
+
+
+    let polygon = 'mmmm!';
+
+
+
+    function dropTriangle() {
+        const viewWidth = render.options.width;
+        const cameraCenterX = render.bounds.min.x + viewWidth / 2;
+        const spawnX = cameraCenterX + (Math.random() - 0.5) * (viewWidth * 0.5);
+        const spawnY = render.bounds.min.y - 50;
+
+        let x = Math.random() * 10;
+        let numSides = Math.round(x);
+
+        const triangleSize = 20 + Math.random() * 20;
+        const triangle = Bodies.polygon(spawnX, spawnY, numSides, triangleSize, {
+            label: polygon, friction: 0.1, frictionAir: 0.01, restitution: 0.4,
+            render: { fillStyle: '#800080' }
+        });
+        Composite.add(world, triangle);
+    }
 
     // --- Runner Setup ---
     const runner = Runner.create();
@@ -82,6 +107,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('keydown', (event) => {
         if (keys.hasOwnProperty(event.code)) { keys[event.code] = true; }
         if (event.code === 'ArrowUp' || event.code === 'KeyW') { keys.Space = true; }
+
+        if (event.code === 'KeyE') {
+            dropTriangle();
+        }
     });
     window.addEventListener('keyup', (event) => {
         if (keys.hasOwnProperty(event.code)) { keys[event.code] = false; }
@@ -103,6 +132,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         canJump = true;
                     }
                 }
+
+                if (otherBody.label === polygon) {
+                    alert('ran into the purple thing')
+                    // TODO: player hit another thing
+
+                }
             }
         }
     });
@@ -114,16 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
      // Explicitly add the button handler again for completeness
      if (dropButton) {
         dropButton.addEventListener('click', () => {
-            const viewWidth = render.options.width;
-            const cameraCenterX = render.bounds.min.x + viewWidth / 2;
-            const spawnX = cameraCenterX + (Math.random() - 0.5) * (viewWidth * 0.5);
-            const spawnY = render.bounds.min.y - 50;
-            const triangleSize = 20 + Math.random() * 20;
-            const triangle = Bodies.polygon(spawnX, spawnY, 3, triangleSize, {
-                label: 'droppedTriangle', friction: 0.1, frictionAir: 0.01, restitution: 0.4,
-                render: { fillStyle: '#800080' }
-            });
-            Composite.add(world, triangle);
+            dropTriangle();
         });
     }
 

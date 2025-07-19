@@ -46,7 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const triangleSize = 20 + Math.random() * 20;
         const triangle = Bodies.polygon(spawnX, spawnY, numSides, triangleSize, {
-            label: polygon, friction: 0.1, frictionAir: 0.01, restitution: 0.4,
+            label: polygon,
+            friction: 0.1,
+            frictionAir: 0.01, restitution: 0.4,
             render: { fillStyle: '#800080' }
         });
         Composite.add(world, triangle);
@@ -58,12 +60,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Game State Variables ---
     let targetMinX, targetMaxX, minWorldX, maxWorldX; // Declare here for broader scope needed by debug text
+    let targetMinY, targetMaxY;
+
 
     // --- Game Objects ---
     const playerWidth = 40;
     const playerHeight = 60;
     const player = Bodies.rectangle(200, window.innerHeight - 150, playerWidth, playerHeight, {
-        label: 'player', inertia: Infinity, frictionAir: 0.01, friction: 0.1, density: 0.002, restitution: 0.1,
+        label: 'player', inertia: Infinity, frictionAir: 0.01,
+        friction: 0.1,
+        density: 0.002, restitution: 0.1,
         render: { fillStyle: '#FF6347' }
     });
 
@@ -134,8 +140,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 if (otherBody.label === polygon) {
-                    alert('ran into the purple thing')
-                    // TODO: player hit another thing
+                    console.log(otherBody);
+
+
+                    let numSides = otherBody.vertices.length;
+
+
+                    // const jumpForceMagnitude = 0.04 * player.mass;
+
+                    const jumpForceMagnitude = 0.01 * numSides * player.mass;
+                    console.log('before');
+                    console.log(player);
+                    
+                    setTimeout(() => {
+                        Body.applyForce(player, player.position, { x: 0, y: -jumpForceMagnitude });
+                    }, 100);
+                    
+                    
+                    console.log('after');
+                    console.log(player);
 
                 }
             }
@@ -166,6 +189,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentVelocityX > moveSpeed) { Body.setVelocity(player, { x: moveSpeed, y: player.velocity.y }); }
         else if (currentVelocityX < -moveSpeed) { Body.setVelocity(player, { x: -moveSpeed, y: player.velocity.y }); }
         if (keys.Space && canJump) {
+
+            // Apply a force to the player
             Body.applyForce(player, player.position, { x: 0, y: -jumpForceMagnitude });
             canJump = false;
         }
@@ -227,8 +252,18 @@ document.addEventListener('DOMContentLoaded', () => {
         render.bounds.max.x = nextMaxX;
 
         // Keep vertical view fixed (adjust if needed for vertical scroll)
-        render.bounds.min.y = 0;
-        render.bounds.max.y = viewHeight; // Use stored viewHeight
+        let minY = player.position.y - viewHeight / 2;
+        let maxY = player.position.y + viewHeight / 2;
+
+        let tooBigY = 0;
+
+        if (minY > tooBigY) {
+            minY = tooBigY;
+            maxY = tooBigY + viewHeight;
+        }
+
+        render.bounds.min.y = minY;
+        render.bounds.max.y = maxY; // Use stored viewHeight
     });
 
     // --- Debug Text ---
@@ -255,6 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText(`TargetMaxX: ${targetMaxX?.toFixed(1)}`, 10, startY + lineHeight * 7);
         ctx.fillText(`World MinX: ${minWorldX?.toFixed(1)}`, 10, startY + lineHeight * 8);
         ctx.fillText(`World MaxX: ${maxWorldX?.toFixed(1)}`, 10, startY + lineHeight * 9);
+        ctx.fillText(`Cam MinY: ${render.bounds.min.y?.toFixed(1)}`, 10, startY + lineHeight * 10);
     });
 
 
